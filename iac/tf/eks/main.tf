@@ -5,22 +5,43 @@
 # You should **not** schedule deployments and services in this workspace. This keeps workspaces modular (one for provision EKS, another for scheduling Kubernetes resources) as per best practices.
 provider "aws" {
   region = var.region
-  shared_credentials_file = "aws-creds.ini"
+
+  # in-cluster tf (e.g. crossplane)
+  #shared_credentials_file = "aws-creds.ini"
+
+  # local tf
+  shared_credentials_files = ["/home/ddonahue/.aws/credentials"]
 }
 
-provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-}
-    
-#Modules _must_ use remote state. The provider does not persist state.
+# s3 backend
 terraform {
-  backend "kubernetes" {
-    secret_suffix     = "providerconfig-default"
-    namespace         = "nethopper"
-    in_cluster_config = true
+  backend "s3" {
+    bucket = "pov-bedrock-tfstate"
+    key    = "tfstate/key"
+    region = "us-east-2"
   }
 }
+
+# local backend
+#terraform {
+#  backend "local" {
+#  }
+#}
+
+# in-cluster backend
+#provider "kubernetes" {
+#  host                   = module.eks.cluster_endpoint
+#  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+#}
+    
+#Modules _must_ use remote state. The provider does not persist state.
+#terraform {
+#  backend "kubernetes" {
+#    secret_suffix     = "providerconfig-default"
+#    namespace         = "nethopper"
+#    in_cluster_config = true
+#  }
+#}
 
 data "aws_availability_zones" "available" {}
 

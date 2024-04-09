@@ -17,24 +17,24 @@ module "eks" {
     create_security_group = false
   }
 
-  eks_managed_node_groups = {
-    one = {
-      name = "node-group-1"
+  #eks_managed_node_groups = {
+  #  one = {
+  #    name = "node-group-1"
 
-      instance_types = ["t3.large"]
+  #    instance_types = ["t3.large"]
 
-      min_size     = 1 
-      max_size     = 1
-      desired_size = 1
+ #     min_size     = 0 
+  #    max_size     = 0
+  #    desired_size = 0
 
-      pre_bootstrap_user_data = <<-EOT
-      echo 'foo bar'
-      EOT
+ #     pre_bootstrap_user_data = <<-EOT
+ #     echo 'foo bar'
+ #     EOT
 
-      vpc_security_group_ids = [
-        aws_security_group.node_group_one.id
-      ]
-    }
+ #     vpc_security_group_ids = [
+ #       aws_security_group.node_group_one.id
+ #     ]
+ #   }
 
-  }
+#  }
 }
