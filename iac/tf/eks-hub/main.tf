@@ -1,5 +1,5 @@
 provider "aws" {
-  region = local.region
+  region = var.region
 }
 
 provider "kubernetes" {
@@ -31,9 +31,6 @@ provider "helm" {
 data "aws_availability_zones" "available" {}
 
 locals {
-  name   = "pov-bedrock"
-  region = "us-east-2"
-
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 }
@@ -96,7 +93,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
 
-  name = local.name
+  name = var.cluster-name
   cidr = local.vpc_cidr
 
   azs             = local.azs
