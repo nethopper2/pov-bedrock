@@ -10,7 +10,7 @@ provider "kubernetes" {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
     # This requires the awscli to be installed locally where Terraform is executed
-    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--profile", "nh-prod"]
+    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--profile", var.aws-cli-profile]
   }
 }
 
@@ -23,7 +23,7 @@ provider "helm" {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
       # This requires the awscli to be installed locally where Terraform is executed
-      args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--profile", "nh-prod"]
+      args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--profile", var.aws-cli-profile]
     }
   }
 }
@@ -46,12 +46,11 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  cluster_name                   = local.name
-  cluster_version                = "1.29"
+  cluster_name                   = var.cluster-name
+  cluster_version                = var.k8s-version
   cluster_endpoint_public_access = true
 
   enable_cluster_creator_admin_permissions = true
-
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -67,25 +66,27 @@ module "eks" {
   }
 }
 
-# module "eks-aws-auth" {
-#   source  = "terraform-aws-modules/eks/aws//modules/aws-auth"
-#   version = "~> 20.0"
+module "eks-aws-auth" {
+  source  = "terraform-aws-modules/eks/aws//modules/aws-auth"
+  version = "~> 20.0"
 
-#   manage_aws_auth_configmap = true
+  manage_aws_auth_configmap = true
 
-#   aws_auth_users = [
-#     {
-#       userarn  = "arn:aws:iam::811723316634:user/dan@nethopper.io"
-#       username = "dan@nethopper.io"
-#       groups   = ["system:masters"]
-#     },
-#     {
-#       userarn  = "arn:aws:iam::811723316634:user/kamil"
-#       username = "kamil"
-#       groups   = ["system:masters"]
-#     },
-#   ]
-# }
+  aws_auth_users = [
+    {
+      userarn  = "arn:aws:iam::811723316634:user/dan@nethopper.io"
+      username = "dan@nethopper.io"
+      groups   = ["system:masters"]
+    },
+    {
+      userarn  = "arn:aws:iam::811723316634:user/kamil"
+      username = "kamil"
+      groups   = ["system:masters"]
+    },
+  ]
+
+  depends_on = [module.eks]
+}
 
 ################################################################################
 # Supporting Resources
