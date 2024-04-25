@@ -32,7 +32,7 @@ data "aws_availability_zones" "available" {}
 
 locals {
   vpc_cidr = "10.0.0.0/16"
-  azs      = slice(data.aws_availability_zones.available.names, 0, 1)
+  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 }
 
 ################################################################################
@@ -110,28 +110,20 @@ resource "null_resource" "remove_coredns" {
   depends_on = [null_resource.get_kubeconfig]
 }
 
-resource "helm_release" "tigera_operator" {
-  name       = "tigera-operator"
-  repository = "https://docs.projectcalico.org/charts"
-  chart      = "tigera-operator"
-  namespace  = "kube-system"
-  version    = "v3.26.4"
-  wait       = false
-
-  set {
-    name  = "installation.kubernetesProvider"
-    value = "EKS"
+resource "null_resource" "install_calico_manifest" {
+  provisioner "local-exec" {
+    command = "kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico-vxlan.yaml"
   }
 
-  depends_on = [null_resource.disable_vpc_networking]
+  depends_on = [null_resource.get_kubeconfig]
 }
 
-resource "null_resource" "patch_installation_cni" {
+resource "null_resource" "configure_calico" {
   provisioner "local-exec" {
-    command = "kubectl patch installation default --type='json' -p='[{\"op\": \"replace\", \"path\": \"/spec/cni\", \"value\": {\"type\":\"Calico\"} }]'"
+    command = "kubectl -n kube-system set env daemonset/calico-node FELIX_AWSSRCDSTCHECK=Disable"
   }
 
-  depends_on = [helm_release.tigera_operator]
+  depends_on = [null_resource.install_calico_manifest]
 }
 
 module "eks_managed_node_group" {
@@ -150,9 +142,9 @@ module "eks_managed_node_group" {
 
   instance_types = [var.instance-type]
 
-  min_size     = 2
-  max_size     = 3
-  desired_size = 2
+  min_size     = 1
+  max_size     = 1
+  desired_size = 1
 
   enable_bootstrap_user_data = false
 
@@ -164,7 +156,8 @@ module "eks_managed_node_group" {
     sed -i "$${LINE_NUMBER}i $${REPLACEMENT}" /etc/eks/bootstrap.sh
   EOT
 
-  depends_on = [helm_release.tigera_operator]
+  # depends_on = [helm_release.tigera_operator]
+  depends_on = [null_resource.configure_calico]
 }
 
 ################################################################################
