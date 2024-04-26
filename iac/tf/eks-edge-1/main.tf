@@ -209,3 +209,15 @@ module "vpc" {
     "kubernetes.io/role/internal-elb" = 1
   }
 }
+
+################################################################################
+# Spinnaker Prerequisites
+################################################################################
+
+resource "null_resource" "create_iamserviceaccount" {
+  provisioner "local-exec" {
+    command = "eksctl create iamserviceaccount --name s3-access-sa --namespace spinnaker-operator --cluster ${var.cluster-name} --attach-policy-arn arn\\:aws\\:iam::aws\\:policy/AmazonS3FullAccess --approve --override-existing-serviceaccounts --profile ${var.aws-cli-profile}"
+  }
+
+  depends_on = [null_resource.get_kubeconfig]
+}
