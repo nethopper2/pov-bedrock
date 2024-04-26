@@ -78,36 +78,6 @@ module "eks" {
       type                          = "ingress"
       source_cluster_security_group = true
     }
-
-    # DNS TCP
-    ingress_self_coredns_tcp = {
-      description = "Node to node CoreDNS"
-      protocol    = "tcp"
-      from_port   = 53
-      to_port     = 53
-      type        = "ingress"
-      self        = true
-    }
-
-    ingress_self_coredns_tcp_2 = {
-      description = "Node to node CoreDNS"
-      protocol    = "tcp"
-      from_port   = 9153
-      to_port     = 9153
-      type        = "ingress"
-      self        = true
-    }
-
-
-    # DNS UDP
-    ingress_self_coredns_udp = {
-      description = "Node to node CoreDNS UDP"
-      protocol    = "udp"
-      from_port   = 53
-      to_port     = 53
-      type        = "ingress"
-      self        = true
-    }
   }
 }
 
@@ -140,28 +110,20 @@ resource "null_resource" "remove_coredns" {
   depends_on = [null_resource.get_kubeconfig]
 }
 
-resource "helm_release" "tigera_operator" {
-  name       = "tigera-operator"
-  repository = "https://docs.projectcalico.org/charts"
-  chart      = "tigera-operator"
-  namespace  = "kube-system"
-  version    = "v3.27.3"
-  wait       = false
-
-  set {
-    name  = "installation.kubernetesProvider"
-    value = "EKS"
+resource "null_resource" "install_calico_manifest" {
+  provisioner "local-exec" {
+    command = "kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico-vxlan.yaml"
   }
 
-  depends_on = [null_resource.disable_vpc_networking]
+  depends_on = [null_resource.get_kubeconfig]
 }
 
-resource "null_resource" "patch_installation_cni" {
+resource "null_resource" "configure_calico" {
   provisioner "local-exec" {
-    command = "kubectl patch installation default --type='json' -p='[{\"op\": \"replace\", \"path\": \"/spec/cni\", \"value\": {\"type\":\"Calico\"} }]'"
+    command = "kubectl -n kube-system set env daemonset/calico-node FELIX_AWSSRCDSTCHECK=Disable"
   }
 
-  depends_on = [helm_release.tigera_operator]
+  depends_on = [null_resource.install_calico_manifest]
 }
 
 module "eks_managed_node_group" {
@@ -194,7 +156,8 @@ module "eks_managed_node_group" {
     sed -i "$${LINE_NUMBER}i $${REPLACEMENT}" /etc/eks/bootstrap.sh
   EOT
 
-  depends_on = [helm_release.tigera_operator]
+  # depends_on = [helm_release.tigera_operator]
+  depends_on = [null_resource.configure_calico]
 }
 
 ################################################################################
