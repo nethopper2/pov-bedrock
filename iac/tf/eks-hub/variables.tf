@@ -21,3 +21,9 @@ variable "aws-cli-profile" {
   type        = string
   default     = "default"
 }
+
+variable "instance-type" {
+  description = "Instance type"
+  type        = string
+  default     = "m5.large"
+}
