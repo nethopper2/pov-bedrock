@@ -26,11 +26,5 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
-    retry:
-      limit: 2
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m0s
 apiVersion: argoproj.io/v1alpha1
 kind: Application
