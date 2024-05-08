@@ -1,0 +1,30 @@
+metadata:
+  name: pov-bedrock-edge-2-spinnaker-crds
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    nethopper.io/objectID: 663b6ad81bc0c34a20f1a514
+    nethopper.io/cloudID: 6638af5fc5cd46f1322b8a90
+spec:
+  source:
+    path: deploy/spinnaker/crds
+    chart: ""
+    repoURL: https://github.com/nethopper2/pov-bedrock.git
+    targetRevision: main
+  destination:
+    namespace: spinnaker-operator
+    name: ""
+    server: https://nh-kapi-pov-bedrock-edge-2:8080
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+apiVersion: argoproj.io/v1alpha1
+kind: Application
