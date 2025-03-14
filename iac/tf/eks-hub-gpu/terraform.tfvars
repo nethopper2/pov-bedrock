@@ -1,0 +1,6 @@
+region = "us-east-2"
+cluster-name = "privateai3"
+k8s-version = "1.31"
+aws-cli-profile = "nh-prod"
+instance-type = "g4dn.2xlarge"
+ami_type = "AL2_x86_64_GPU"
