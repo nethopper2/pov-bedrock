@@ -1,0 +1,25 @@
+apiVersion: spinnaker.io/v1alpha2
+kind: SpinnakerService
+metadata:
+  name: spinnaker
+spec:
+  spinnakerConfig:
+    config:
+      version: 1.34.2   # the version of Spinnaker to be deployed
+      persistentStorage:
+        persistentStoreType: s3
+        s3:
+          bucket: spinnaker-kl-test # Change to a unique name. Spinnaker stores application and pipeline definitions here
+          rootFolder: front50
+          region: us-east-2
+    service-settings:
+      front50:
+        kubernetes:
+          serviceAccountName: s3-access-sa
+          securityContext:
+            fsGroup: 100
+  # spec.expose - This section defines how Spinnaker should be publicly exposed
+  expose:
+    type: service  # Kubernetes LoadBalancer type (service/ingress), note: only "service" is supported for now
+    service:
+      type: LoadBalancer
