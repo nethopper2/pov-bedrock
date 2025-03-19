@@ -13,7 +13,7 @@ variable "cluster-name" {
 variable "k8s-version" {
   description = "Kubernetes version"
   type        = string
-  default     = "1.29"
+  default     = "1.31"
 }
 
 variable "aws-cli-profile" {
